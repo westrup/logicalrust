@@ -66,18 +66,18 @@ impl Sampler {
 
         match self.period {
             50 => {
-                for i in 0..self.read_cnt {
+                for i in (0..self.read_cnt).rev() {
                     self.data[i] = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
                 }
             },
             100 => {
-                for i in 0..self.read_cnt {
+                for i in (0..self.read_cnt).rev() {
                     self.data[i] = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
                     unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
                 }
             },
             200 => {
-                for i in 0..self.read_cnt {
+                for i in (0..self.read_cnt).rev() {
                     self.data[i] = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
                     unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
                     unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
@@ -85,7 +85,7 @@ impl Sampler {
                 }
             },
             500 => {
-                for i in 0..self.read_cnt {
+                for i in (0..self.read_cnt).rev() {
                     self.data[i] = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
                     unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
                     unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
@@ -100,7 +100,7 @@ impl Sampler {
                 }
             },
             1000 => {
-                for i in 0..self.read_cnt {
+                for i in (0..self.read_cnt).rev() {
                     self.data[i] = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
                     unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
                     unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
@@ -130,7 +130,7 @@ impl Sampler {
                 }
             },
             _ => {
-                for i in 0..self.read_cnt {
+                for i in (0..self.read_cnt).rev() {
                     self.data[i] = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
                     self.delay.delay_us(self.period / 1000)
                 }
