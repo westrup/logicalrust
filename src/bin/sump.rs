@@ -42,7 +42,7 @@ pub struct Sampler {
 
 impl Sampler {
     pub const SAMPLE_MEMORY: usize = 100_000;
-    pub const MAX_SAMPLERATE: usize = 10_000_000; // Hz
+    pub const MAX_SAMPLERATE: usize = 20_000_000; // Hz
 
     pub fn new(delay: hal::delay::Delay) -> Self {
         Self {
@@ -62,12 +62,82 @@ impl Sampler {
 
         self.delay.delay_us(self.start_delay);
 
-        defmt::debug!("start collecting {} samples at {} ns interval", self.read_cnt, self.period);
-        for i in 0..self.read_cnt {
-            self.data[i] = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
-            self.delay.delay_us(self.period / 1000);
+        defmt::info!("start collecting {} samples at {} ns interval", self.read_cnt, self.period);
+
+        match self.period {
+            50 => {
+                for i in 0..self.read_cnt {
+                    self.data[i] = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
+                }
+            },
+            100 => {
+                for i in 0..self.read_cnt {
+                    self.data[i] = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                }
+            },
+            200 => {
+                for i in 0..self.read_cnt {
+                    self.data[i] = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                }
+            },
+            500 => {
+                for i in 0..self.read_cnt {
+                    self.data[i] = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                }
+            },
+            1000 => {
+                for i in 0..self.read_cnt {
+                    self.data[i] = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                }
+            },
+            _ => {
+                for i in 0..self.read_cnt {
+                    self.data[i] = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
+                    self.delay.delay_us(self.period / 1000)
+                }
+            },
         }
-        defmt::debug!("done collecting samples");
+
+        defmt::info!("done collecting samples");
 
         self.data[0..self.read_cnt].iter()
     }

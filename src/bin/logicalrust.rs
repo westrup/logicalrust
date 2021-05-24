@@ -1,5 +1,6 @@
 #![no_main]
 #![no_std]
+#![feature(asm)]
 
 use defmt::unwrap;
 use logicalrust as _; // global logger + panicking-behavior + memory layout
