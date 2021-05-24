@@ -1,5 +1,6 @@
-use crate::hal::{prelude::*,stm32};
 use stm32f4xx_hal as hal;
+use cortex_m::prelude::*;
+use hal::stm32;
 
 pub struct Meta;
 

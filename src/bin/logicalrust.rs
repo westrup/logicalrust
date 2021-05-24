@@ -1,6 +1,5 @@
 #![no_main]
 #![no_std]
-#![feature(asm)]
 
 use defmt::unwrap;
 use logicalrust as _; // global logger + panicking-behavior + memory layout
@@ -9,8 +8,7 @@ use crate::hal::{prelude::*, stm32};
 use nb::block;
 use stm32f4xx_hal as hal;
 
-mod sump;
-use crate::sump::*;
+use logicalrust::sump::*;
 
 trait PutC {
     fn putc(&mut self, byte: u8);
