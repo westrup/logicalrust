@@ -1,15 +1,16 @@
 #![no_main]
 #![no_std]
 
-use logicalrust as _; // global logger + panicking-behavior + memory layout
 use defmt::unwrap;
+use logicalrust as _; // global logger + panicking-behavior + memory layout
 
-use stm32f4xx_hal as hal;
 use crate::hal::{prelude::*, stm32};
-use core::fmt::Write; // for pretty formatting of the serial output
+use core::fmt::Write;
+use stm32f4xx_hal as hal; // for pretty formatting of the serial output
 
 fn read_with_timeout<S>(timer: &mut hal::timer::Timer<stm32::TIM1>, rx: &mut S) -> Option<u8>
-where S: embedded_hal::serial::Read<u8>,
+where
+    S: embedded_hal::serial::Read<u8>,
 {
     timer.start(1.hz());
     loop {
@@ -50,7 +51,8 @@ fn main() -> ! {
         (tx_pin, rx_pin),
         hal::serial::config::Config::default().baudrate(115200.bps()),
         clocks,
-    ).unwrap();
+    )
+    .unwrap();
 
     let (mut tx, mut rx) = serial.split();
 

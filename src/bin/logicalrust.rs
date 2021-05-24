@@ -1,61 +1,50 @@
 #![no_main]
 #![no_std]
 
-use logicalrust as _; // global logger + panicking-behavior + memory layout
 use defmt::unwrap;
+use logicalrust as _; // global logger + panicking-behavior + memory layout
 
-use stm32f4xx_hal as hal;
 use crate::hal::{prelude::*, stm32};
-use core::{fmt::Write}; // for pretty formatting of the serial output
 use nb::block;
+use stm32f4xx_hal as hal;
 
-enum Sump {
-    Reset,
-    Arm,
-    Id,
-    Test,
-    GetMetadata,
-    RleFinish,
-    XOn,
-    XOff,
-    SetTriggerMask,
-    SetTriggerValues,
-    SetTriggerConf,
-    SetDivider,
-    SetReadDelayCount,
-    SetFlags,
-    Unknown(u8),
+mod sump;
+use crate::sump::*;
+
+trait PutC {
+    fn putc(&mut self, byte: u8);
+    fn put<'a, I>(&mut self, bytes: I)
+    where
+        I: IntoIterator<Item = &'a u8>;
 }
 
-enum SumpMeta {
-    End = 0x00,
-    Name = 0x01,
-    SampleMemory = 0x21,
-    DynamicMemory = 0x22,
-    MaxSampleRate = 0x23,
-    NumProbes = 0x40,
-    ProtocolVersion = 0x41,
+impl PutC for hal::serial::Tx<hal::stm32::USART2> {
+    fn putc(&mut self, byte: u8) {
+        block!(self.write(byte)).unwrap();
+    }
+    fn put<'a, I>(&mut self, bytes: I)
+    where
+        I: IntoIterator<Item = &'a u8>,
+    {
+        bytes.into_iter().for_each(|b| self.putc(*b));
+    }
 }
 
-impl Sump {
-    fn from_byte(byte: u8) -> Sump {
-        match byte {
-            0x00 => Sump::Reset,
-            0x01 => Sump::Arm,
-            0x02 => Sump::Id,
-            0x03 => Sump::Test,
-            0x04 => Sump::GetMetadata,
-            0x05 => Sump::RleFinish,
-            0x11 => Sump::XOn,
-            0x12 => Sump::XOff,
-            0xC0 => Sump::SetTriggerMask,
-            0xC1 => Sump::SetTriggerValues,
-            0xC2 => Sump::SetTriggerConf,
-            0x80 => Sump::SetDivider,
-            0x81 => Sump::SetReadDelayCount,
-            0x82 => Sump::SetFlags,
-            _ => Sump::Unknown(byte),
-        }
+trait GetC {
+    fn getc(&mut self) -> u8;
+    fn get_u16(&mut self) -> u16;
+    fn get_u32(&mut self) -> u32;
+}
+
+impl GetC for hal::serial::Rx<hal::stm32::USART2> {
+    fn getc(&mut self) -> u8 {
+        block!(self.read()).unwrap()
+    }
+    fn get_u16(&mut self) -> u16 {
+        u16::from_le_bytes([self.getc(), self.getc()])
+    }
+    fn get_u32(&mut self) -> u32 {
+        u32::from_le_bytes([self.getc(), self.getc(), self.getc(), self.getc()])
     }
 }
 
@@ -65,83 +54,100 @@ fn main() -> ! {
     let dp = unwrap!(stm32::Peripherals::take());
     let cp = unwrap!(cortex_m::peripheral::Peripherals::take());
 
-    let gpioa = dp.GPIOA.split();
-    let mut led = gpioa.pa5.into_push_pull_output();
-
     let rcc = dp.RCC.constrain();
     let clocks = rcc.cfgr.use_hse(8.mhz()).sysclk(100.mhz()).freeze();
 
-    let mut delay = hal::delay::Delay::new(cp.SYST, clocks);
-    let mut timer = hal::timer::Timer::tim1(dp.TIM1, 100.hz(), clocks);
-
-    let tx_pin = gpioa.pa2.into_alternate_af7();
-    let rx_pin = gpioa.pa3.into_alternate_af7();
-
-    // configure serial
-    let serial = hal::serial::Serial::usart2(
-        dp.USART2,
-        (tx_pin, rx_pin),
-        hal::serial::config::Config::default().baudrate(115200.bps()),
-        clocks,
-    ).unwrap();
-
-    let (mut tx, mut rx) = serial.split();
-
+    let gpioa = dp.GPIOA.split();
+    let mut led = gpioa.pa5.into_push_pull_output();
     unwrap!(led.set_high());
 
+    let serial = hal::serial::Serial::usart2(
+        dp.USART2,
+        (gpioa.pa2.into_alternate_af7(), gpioa.pa3.into_alternate_af7()),
+        hal::serial::config::Config::default().baudrate(115200.bps()),
+        clocks,
+    )
+    .unwrap();
+    let (mut tx, mut rx) = serial.split();
+
+    let gpiob = dp.GPIOB.split();
+    gpiob.pb0.into_floating_input();
+    gpiob.pb1.into_floating_input();
+    gpiob.pb2.into_floating_input();
+    gpiob.pb3.into_floating_input();
+    gpiob.pb4.into_floating_input();
+    gpiob.pb5.into_floating_input();
+    gpiob.pb6.into_floating_input();
+    gpiob.pb7.into_floating_input();
+
+    let mut sampler = Sampler::new(hal::delay::Delay::new(cp.SYST, clocks));
+
     loop {
-        // if let Some(cmd) = read_with_timeout(&mut timer, &mut rx) {
-        match Sump::from_byte(block!(rx.read()).unwrap()) {
-            Sump::Reset => defmt::info!("reset"),
-            Sump::Id => {
+        match block!(rx.read()).unwrap() {
+            Cmd::RESET => defmt::info!("reset"),
+            Cmd::ID => {
                 defmt::info!("ID");
-                write!(tx, "1ALS").unwrap();
-            },
-            Sump::GetMetadata => {
-                defmt::info!("meta");
+                tx.put(b"1ALS");
+            }
+            Cmd::ARM => {
+                defmt::info!("ARM");
+                tx.put(sampler.run());
+            }
+            Cmd::GET_METADATA => {
+                defmt::info!("META");
 
-                block!(tx.write(SumpMeta::Name as u8)).unwrap();
-                write!(tx, "logicalrust").unwrap();
-                block!(tx.write(SumpMeta::End as u8)).unwrap();
+                tx.putc(Meta::NAME);
+                tx.put(b"logicalrust");
+                tx.putc(Meta::END);
 
-                block!(tx.write(SumpMeta::SampleMemory as u8)).unwrap();
-                block!(tx.write(0)).unwrap();
-                block!(tx.write(0)).unwrap();
-                block!(tx.write(1)).unwrap();
-                block!(tx.write(0)).unwrap();
+                tx.putc(Meta::SAMPLE_MEMORY);
+                tx.put(&Sampler::SAMPLE_MEMORY.to_be_bytes());
 
-                block!(tx.write(SumpMeta::DynamicMemory as u8)).unwrap();
-                block!(tx.write(0)).unwrap();
-                block!(tx.write(0)).unwrap();
-                block!(tx.write(0)).unwrap();
-                block!(tx.write(0)).unwrap();
+                tx.putc(Meta::DYNAMIC_MEMORY);
+                tx.put(&0usize.to_be_bytes());
 
-                block!(tx.write(SumpMeta::MaxSampleRate as u8)).unwrap();
-                block!(tx.write(0)).unwrap();
-                block!(tx.write(1)).unwrap();
-                block!(tx.write(0)).unwrap();
-                block!(tx.write(0)).unwrap();
+                tx.putc(Meta::MAX_SAMPLERATE);
+                tx.put(&Sampler::MAX_SAMPLERATE.to_be_bytes());
 
-                block!(tx.write(SumpMeta::NumProbes as u8)).unwrap();
-                block!(tx.write(0x8)).unwrap();
+                tx.putc(Meta::NUM_PROBES);
+                tx.putc(8);
 
-                block!(tx.write(SumpMeta::ProtocolVersion as u8)).unwrap();
-                block!(tx.write(0x2)).unwrap();
+                tx.putc(Meta::PROTOCOL_VERSION);
+                tx.putc(2);
 
-                block!(tx.write(SumpMeta::End as u8)).unwrap();
-            },
-            Sump::Unknown(b) => defmt::info!("unknown {}", b),
-            _ => defmt::info!("unhandled"),
+                tx.putc(Meta::END);
+            }
+            Cmd::SET_DIVIDER => {
+                sampler.period = 10 + 10 * rx.get_u32();
+                defmt::info!("period {}", sampler.period);
+            }
+            Cmd::SET_READ_DELAY => {
+                sampler.read_cnt = 4 + 4 * rx.get_u16() as usize;
+                sampler.start_delay = 4 * rx.get_u16() as u32;
+                defmt::info!("count {} delay {}", sampler.read_cnt, sampler.start_delay);
+            }
+            Cmd::SET_FLAGS => {
+                sampler.flags = rx.get_u32();
+                defmt::info!("flags {=u32:x}", sampler.flags);
+            }
+            Cmd::SET_TRIGGER_MASK => {
+                sampler.trigger_mask = rx.get_u32();
+                defmt::info!("trigmask {=u32:x}", sampler.trigger_mask);
+            }
+            Cmd::SET_TRIGGER_VALUE => {
+                sampler.trigger_val = rx.get_u32();
+                defmt::info!("trigval {}", sampler.trigger_val);
+            }
+            Cmd::SET_TRIGGER_CONF => {
+                sampler.trigger_conf = rx.get_u32();
+                defmt::info!("trigconf {=u32:x}", sampler.trigger_conf);
+            }
+            unhandled => {
+                defmt::info!("UNHANDLED {}", unhandled);
+                break;
+            }
         }
     }
-    // unwrap!(led.set_low());
-
-    // for i in 0..5 {
-    //     writeln!(tx, "i: {:02}\r", i).unwrap();
-    //     // block!(tx.flush()).unwrap();
-
-    //     delay.delay_ms(1000_u32);
-    // }
 
     logicalrust::exit()
 }
