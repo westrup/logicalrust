@@ -1,4 +1,18 @@
-# `app-template`
+# logicalrust
+
+ ## Embedded Rust Logic Analyzer for STM32 boards.
+
+ Code is adapted to the Nucleo-F411RE development board, but should work with most STM32 boards with small modifications
+
+## Usage
+
+* Connect STM32 board
+* `cargo run --release`
+* Start PulseView or other OLS / SUMP compatible frontend
+* Connect GPIO PB0 to PB7 to signals that you want to sample
+* Select sample rate and number of samples in PulseView and press `run`
+
+## knurling-rs `app-template` documentation
 
 > Quickly set up a [`probe-run`] + [`defmt`] + [`flip-link`] embedded project
 
@@ -6,7 +20,7 @@
 [`defmt`]: https://github.com/knurling-rs/defmt
 [`flip-link`]: https://github.com/knurling-rs/flip-link
 
-## Dependencies
+### Dependencies
 
 #### 1. `flip-link`:
 
@@ -31,7 +45,7 @@ $ cargo install cargo-generate
 
 > *Note:* You can also just clone this repository instead of using `cargo-generate`, but this involves additional manual adjustments.
 
-## Setup
+### Setup
 
 #### 1. Initialize the project template
 
@@ -148,13 +162,13 @@ If you are using [rust-analyzer] with VS Code for IDE-like features you can add 
         "Cargo.toml",
         "firmware/Cargo.toml",
     ]
-} 
+}
 ```
 
 [RA docs]: https://rust-analyzer.github.io/manual.html#configuration
 [rust-analyzer]: https://rust-analyzer.github.io/
 
-## Trying out the git version of defmt
+### Trying out the git version of defmt
 
 This template is configured to use the latest crates.io release (the "stable" release) of the `defmt` framework.
 To use the git version (the "development" version) of `defmt` follow these steps:
@@ -194,7 +208,7 @@ You are now using the git version of `defmt`!
 
 **NOTE** there may have been breaking changes between the crates.io version and the git version; you'll need to fix those in the source code.
 
-## Support
+### Support
 
 `app-template` is part of the [Knurling] project, [Ferrous Systems]' effort at
 improving tooling used to develop for embedded systems.
@@ -202,7 +216,7 @@ improving tooling used to develop for embedded systems.
 If you think that our work is useful, consider sponsoring it via [GitHub
 Sponsors].
 
-## License
+### License
 
 Licensed under either of
 
