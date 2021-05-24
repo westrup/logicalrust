@@ -74,68 +74,39 @@ impl Sampler {
             50 => {
                 for data in self.data[0..self.read_cnt].iter_mut() {
                     *data = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
-                    unsafe{asm!("nop");};
+                    cortex_m::asm::nop();
                 }
             },
             100 => {
                 for data in self.data[0..self.read_cnt].iter_mut() {
                     *data = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");};
+                    for _ in 0..7 {
+                        cortex_m::asm::nop();
+                    }
                 }
             },
             200 => {
                 for data in self.data[0..self.read_cnt].iter_mut() {
                     *data = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    for _ in 0..16 {
+                        cortex_m::asm::nop();
+                    }
                 }
             },
             500 => {
                 for data in self.data[0..self.read_cnt].iter_mut() {
                     *data = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    for _ in 0..40 {
+                        cortex_m::asm::nop();
+                    }
                 }
             },
             1000 => {
                 for data in self.data[0..self.read_cnt].iter_mut() {
                     *data = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
-                    unsafe{asm!("nop");asm!("nop");asm!("nop");asm!("nop");};
+                    for _ in 0..100 {
+                        cortex_m::asm::nop();
+                    }
                 }
             },
             _ => {
