@@ -1,5 +1,4 @@
 [package]
-# TODO(1) fix `authors` if you didn't use `cargo-generate`
 authors = ["Anders Westrup <anders.westrup@above.se>"]
 name = "testsuite"
 publish = false
