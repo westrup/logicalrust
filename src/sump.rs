@@ -109,10 +109,10 @@ impl Sampler {
                     }
                 }
             },
-            _ => {
+            period => {
                 for data in self.data[0..self.read_cnt].iter_mut() {
                     *data = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
-                    self.delay.delay_us(self.period / 1000)
+                    self.delay.delay_us(period / 1000)
                 }
             },
         }
