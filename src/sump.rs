@@ -1,6 +1,6 @@
-use stm32f4xx_hal as hal;
 use cortex_m::prelude::*;
 use hal::stm32;
+use stm32f4xx_hal as hal;
 
 pub struct Meta;
 
@@ -42,7 +42,7 @@ pub struct Sampler {
 }
 
 impl Sampler {
-    pub const SAMPLE_MEMORY: usize = 10_000;
+    pub const SAMPLE_MEMORY: usize = 20_000;
     pub const MAX_SAMPLERATE: usize = 50_000_000; // Hz
 
     pub fn new(delay: hal::delay::Delay) -> Self {
@@ -60,61 +60,65 @@ impl Sampler {
     }
 
     pub fn run(&mut self) -> impl IntoIterator<Item = &u8> {
-
         self.delay.delay_us(self.start_delay);
 
-        defmt::info!("start collecting {} samples at {} ns interval", self.read_cnt, self.period);
+        defmt::info!(
+            "start collecting {} samples at {} ns interval",
+            self.read_cnt,
+            self.period
+        );
 
         match self.period {
-            20 => { // not really 50MHz, more like 40MHz
+            20 => {
+                // not really 50MHz, more like 40MHz
                 for data in self.data[0..self.read_cnt].iter_mut() {
-                    *data = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
+                    *data = unsafe { ((*stm32::GPIOB::ptr()).idr.read().bits()) as u8 };
                 }
-            },
+            }
             50 => {
                 for data in self.data[0..self.read_cnt].iter_mut() {
-                    *data = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
+                    *data = unsafe { ((*stm32::GPIOB::ptr()).idr.read().bits()) as u8 };
                     cortex_m::asm::nop();
                 }
-            },
+            }
             100 => {
                 for data in self.data[0..self.read_cnt].iter_mut() {
-                    *data = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
+                    *data = unsafe { ((*stm32::GPIOB::ptr()).idr.read().bits()) as u8 };
                     for _ in 0..7 {
                         cortex_m::asm::nop();
                     }
                 }
-            },
+            }
             200 => {
                 for data in self.data[0..self.read_cnt].iter_mut() {
-                    *data = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
+                    *data = unsafe { ((*stm32::GPIOB::ptr()).idr.read().bits()) as u8 };
                     for _ in 0..16 {
                         cortex_m::asm::nop();
                     }
                 }
-            },
+            }
             500 => {
                 for data in self.data[0..self.read_cnt].iter_mut() {
-                    *data = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
+                    *data = unsafe { ((*stm32::GPIOB::ptr()).idr.read().bits()) as u8 };
                     for _ in 0..40 {
                         cortex_m::asm::nop();
                     }
                 }
-            },
+            }
             1000 => {
                 for data in self.data[0..self.read_cnt].iter_mut() {
-                    *data = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
+                    *data = unsafe { ((*stm32::GPIOB::ptr()).idr.read().bits()) as u8 };
                     for _ in 0..100 {
                         cortex_m::asm::nop();
                     }
                 }
-            },
+            }
             period => {
                 for data in self.data[0..self.read_cnt].iter_mut() {
-                    *data = unsafe {((*stm32::GPIOB::ptr()).idr.read().bits()) as u8};
+                    *data = unsafe { ((*stm32::GPIOB::ptr()).idr.read().bits()) as u8 };
                     self.delay.delay_us(period / 1000)
                 }
-            },
+            }
         }
 
         defmt::info!("done collecting samples");

@@ -62,7 +62,10 @@ fn main() -> ! {
 
     let serial = hal::serial::Serial::usart2(
         dp.USART2,
-        (gpioa.pa2.into_alternate_af7(), gpioa.pa3.into_alternate_af7()),
+        (
+            gpioa.pa2.into_alternate_af7(),
+            gpioa.pa3.into_alternate_af7(),
+        ),
         hal::serial::config::Config::default().baudrate(115200.bps()),
         clocks,
     )
