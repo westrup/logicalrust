@@ -42,7 +42,7 @@ pub struct Sampler {
 }
 
 impl Sampler {
-    pub const SAMPLE_MEMORY: usize = 100_000;
+    pub const SAMPLE_MEMORY: usize = 10_000;
     pub const MAX_SAMPLERATE: usize = 50_000_000; // Hz
 
     pub fn new(delay: hal::delay::Delay) -> Self {
