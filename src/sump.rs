@@ -41,7 +41,7 @@ pub struct Sampler {
 }
 
 impl Sampler {
-    pub const SAMPLE_MEMORY: usize = 50_000;
+    pub const SAMPLE_MEMORY: usize = 100_000;
     pub const MAX_SAMPLERATE: usize = 50_000_000; // Hz
 
     pub fn new(delay: hal::delay::Delay) -> Self {
@@ -58,6 +58,12 @@ impl Sampler {
     }
 
     pub fn run(&mut self, data: &mut [u8; Sampler::SAMPLE_MEMORY]) {
+        if self.read_cnt > Sampler::SAMPLE_MEMORY {
+            self.read_cnt = Sampler::SAMPLE_MEMORY;
+        }
+        if self.period < 20 {
+            self.period = 20;
+        }
         self.delay.delay_us(self.start_delay);
 
         defmt::info!(

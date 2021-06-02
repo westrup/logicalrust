@@ -93,7 +93,9 @@ fn main() -> ! {
             }
             Cmd::ARM => {
                 defmt::info!("ARM");
-                tx.put(sampler.run());
+                let mut data = [0u8; Sampler::SAMPLE_MEMORY];
+                sampler.run(&mut data);
+                tx.put(&data[0..sampler.read_cnt]);
             }
             Cmd::GET_METADATA => {
                 defmt::info!("META");
