@@ -53,6 +53,7 @@ mod app {
         rx: hal::serial::Rx<hal::stm32::USART2>,
         tx: hal::serial::Tx<hal::stm32::USART2>,
         sampler: Sampler,
+        data: &'static mut [u8; Sampler::SAMPLE_MEMORY],
     }
 
     #[init]
@@ -90,6 +91,7 @@ mod app {
         gpiob.pb7.into_floating_input();
 
         let sampler = Sampler::new(hal::delay::Delay::new(ctx.core.SYST, clocks));
+        static mut DATA: [u8; Sampler::SAMPLE_MEMORY] = [0u8; Sampler::SAMPLE_MEMORY];
 
         (
             init::LateResources {
@@ -97,6 +99,7 @@ mod app {
                 rx,
                 tx,
                 sampler,
+                data: unsafe {&mut DATA},
             },
             init::Monotonics(),
         )
@@ -109,14 +112,18 @@ mod app {
         }
     }
 
-    #[task(resources = [tx, sampler])]
+    #[task(resources = [tx, sampler, data])]
     fn sampler_task(ctx: sampler_task::Context) {
         let mut tx_res = ctx.resources.tx;
         let mut sampler_res = ctx.resources.sampler;
+        let mut data_res = ctx.resources.data;
 
-        tx_res.lock(|tx| {
-            sampler_res.lock(|sampler| {
-                tx.put(sampler.run())
+        sampler_res.lock(|sampler| {
+            data_res.lock(|data| {
+                sampler.run(data);
+                tx_res.lock(|tx| {
+                    tx.put(data[0..sampler.read_cnt].iter());
+                })
             })
         })
     }

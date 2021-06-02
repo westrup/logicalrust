@@ -37,12 +37,11 @@ pub struct Sampler {
     pub trigger_mask: u32,
     pub trigger_val: u32,
     pub trigger_conf: u32,
-    data: [u8; Sampler::SAMPLE_MEMORY],
     delay: hal::delay::Delay,
 }
 
 impl Sampler {
-    pub const SAMPLE_MEMORY: usize = 20_000;
+    pub const SAMPLE_MEMORY: usize = 50_000;
     pub const MAX_SAMPLERATE: usize = 50_000_000; // Hz
 
     pub fn new(delay: hal::delay::Delay) -> Self {
@@ -54,12 +53,11 @@ impl Sampler {
             trigger_mask: 0,
             trigger_val: 0,
             trigger_conf: 0,
-            data: [0u8; Sampler::SAMPLE_MEMORY],
             delay,
         }
     }
 
-    pub fn run(&mut self) -> impl IntoIterator<Item = &u8> {
+    pub fn run(&mut self, data: &mut [u8; Sampler::SAMPLE_MEMORY]) {
         self.delay.delay_us(self.start_delay);
 
         defmt::info!(
@@ -71,18 +69,18 @@ impl Sampler {
         match self.period {
             20 => {
                 // not really 50MHz, more like 40MHz
-                for data in self.data[0..self.read_cnt].iter_mut() {
+                for data in data[0..self.read_cnt].iter_mut() {
                     *data = unsafe { ((*stm32::GPIOB::ptr()).idr.read().bits()) as u8 };
                 }
             }
             50 => {
-                for data in self.data[0..self.read_cnt].iter_mut() {
+                for data in data[0..self.read_cnt].iter_mut() {
                     *data = unsafe { ((*stm32::GPIOB::ptr()).idr.read().bits()) as u8 };
                     cortex_m::asm::nop();
                 }
             }
             100 => {
-                for data in self.data[0..self.read_cnt].iter_mut() {
+                for data in data[0..self.read_cnt].iter_mut() {
                     *data = unsafe { ((*stm32::GPIOB::ptr()).idr.read().bits()) as u8 };
                     for _ in 0..7 {
                         cortex_m::asm::nop();
@@ -90,7 +88,7 @@ impl Sampler {
                 }
             }
             200 => {
-                for data in self.data[0..self.read_cnt].iter_mut() {
+                for data in data[0..self.read_cnt].iter_mut() {
                     *data = unsafe { ((*stm32::GPIOB::ptr()).idr.read().bits()) as u8 };
                     for _ in 0..16 {
                         cortex_m::asm::nop();
@@ -98,7 +96,7 @@ impl Sampler {
                 }
             }
             500 => {
-                for data in self.data[0..self.read_cnt].iter_mut() {
+                for data in data[0..self.read_cnt].iter_mut() {
                     *data = unsafe { ((*stm32::GPIOB::ptr()).idr.read().bits()) as u8 };
                     for _ in 0..40 {
                         cortex_m::asm::nop();
@@ -106,7 +104,7 @@ impl Sampler {
                 }
             }
             1000 => {
-                for data in self.data[0..self.read_cnt].iter_mut() {
+                for data in data[0..self.read_cnt].iter_mut() {
                     *data = unsafe { ((*stm32::GPIOB::ptr()).idr.read().bits()) as u8 };
                     for _ in 0..100 {
                         cortex_m::asm::nop();
@@ -114,7 +112,7 @@ impl Sampler {
                 }
             }
             period => {
-                for data in self.data[0..self.read_cnt].iter_mut() {
+                for data in data[0..self.read_cnt].iter_mut() {
                     *data = unsafe { ((*stm32::GPIOB::ptr()).idr.read().bits()) as u8 };
                     self.delay.delay_us(period / 1000)
                 }
@@ -123,7 +121,6 @@ impl Sampler {
 
         defmt::info!("done collecting samples");
 
-        self.data[0..self.read_cnt].reverse(); // SUMP protocol has last samples first
-        self.data[0..self.read_cnt].iter()
+        data[0..self.read_cnt].reverse(); // SUMP protocol has last samples first
     }
 }
